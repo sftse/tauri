@@ -557,13 +557,17 @@ impl<R: Runtime> InvokeMessage<R> {
     &self.payload
   }
 
+  // TODO: make private or remove in v3
   /// The state manager associated with the application
+  #[deprecated(note = "Use `Manager::state` to access the state")]
   #[inline(always)]
   pub fn state(&self) -> Arc<StateManager> {
     self.webview.manager.state.clone()
   }
 
+  // TODO: make private or remove in v3
   /// A reference to the state manager associated with application.
+  #[deprecated(note = "Use `Manager::state` to access the state")]
   #[inline(always)]
   pub fn state_ref(&self) -> &StateManager {
     &self.webview.manager.state
