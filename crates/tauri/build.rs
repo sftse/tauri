@@ -226,16 +226,14 @@ const PLUGINS: &[(&str, &[(&str, bool)])] = &[
   ),
 ];
 
-// checks if the "custom-protocol" feature is enabled.
-fn has_custom_protocol() -> bool {
+// checks if the given Cargo feature is enabled.
+fn has_feature(checked_features: &mut Vec<&'static str>, feature: &'static str) -> bool {
+  checked_features.push(feature);
   // when a feature is enabled, Cargo sets the `CARGO_FEATURE_<name>` env var to 1
   // <https://doc.rust-lang.org/cargo/reference/environment-variables.html#environment-variables-cargo-sets-for-build-scripts>
-  std::env::var_os(format!(
-    "CARGO_FEATURE_{}",
-    AsShoutySnakeCase("custom-protocol")
-  ))
-  .map(|x| x == "1")
-  .unwrap_or(false)
+  std::env::var_os(format!("CARGO_FEATURE_{}", AsShoutySnakeCase(feature)))
+    .map(|x| x == "1")
+    .unwrap_or(false)
 }
 
 // creates a cfg alias if `has_feature` is true.
@@ -248,7 +246,8 @@ fn alias(alias: &str, has_feature: bool) {
 }
 
 fn main() {
-  let custom_protocol = has_custom_protocol();
+  let mut checked_features = Vec::new();
+  let custom_protocol = has_feature(&mut checked_features, "custom-protocol");
   let dev = !custom_protocol;
   alias("custom_protocol", custom_protocol);
   alias("dev", dev);
@@ -263,7 +262,8 @@ fn main() {
   let out_dir = PathBuf::from(env::var_os("OUT_DIR").unwrap());
 
   let checked_features_out_path = out_dir.join("checked_features");
-  std::fs::write(checked_features_out_path, "custom-protocol")
+  // file is used by a unit test in src/lib.rs to check that the features checked do exist in the Cargo.toml
+  std::fs::write(checked_features_out_path, checked_features.join(","))
     .expect("failed to write checked_features file");
 
   // workaround needed to prevent `STATUS_ENTRYPOINT_NOT_FOUND` error in tests
